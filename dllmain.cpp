@@ -29,8 +29,11 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
         return false;
     }
 
-    DWORD devIndex = 0;
     DWORD devCB = lpDisplayDevice->cb;
+
+    DWORD devIndex = 0;
+    ZeroMemory(lpDisplayDevice, sizeof DISPLAY_DEVICEA);
+    lpDisplayDevice->cb = devCB;
     BOOL queryDevResult = p_original_EnumDisplayDevicesA(lpDevice, devIndex, lpDisplayDevice, dwFlags);
     while (queryDevResult) {
         if ((lpDisplayDevice->StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) != 0 && (lpDisplayDevice->StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE) != 0) {
@@ -38,6 +41,7 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
         }
 
         devIndex++;
+        ZeroMemory(lpDisplayDevice, sizeof DISPLAY_DEVICEA);
         lpDisplayDevice->cb = devCB;
         queryDevResult = p_original_EnumDisplayDevicesA(lpDevice, devIndex, lpDisplayDevice, dwFlags);
     }
@@ -51,6 +55,7 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
         
         DEVMODEA mode = {};
         DWORD modeIndex = 0;
+        ZeroMemory(&mode, sizeof DEVMODEA);
         mode.dmSize = sizeof DEVMODEA;
         mode.dmDriverExtra = 0;
         BOOL queryModeResult = p_original_EnumDisplaySettingsA(lpDisplayDevice->DeviceName, modeIndex, &mode);
@@ -78,6 +83,7 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
                 modePtrs.push_back(modeStorage);
             }
             modeIndex++;
+            ZeroMemory(&mode, sizeof DEVMODEA);
             mode.dmSize = sizeof DEVMODEA;
             mode.dmDriverExtra = 0;
             queryModeResult = p_original_EnumDisplaySettingsA(lpDisplayDevice->DeviceName, modeIndex, &mode);
