@@ -32,7 +32,7 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
     DWORD devCB = lpDisplayDevice->cb;
 
     DWORD devIndex = 0;
-    ZeroMemory(lpDisplayDevice, sizeof DISPLAY_DEVICEA);
+    ZeroMemory(lpDisplayDevice, devCB);
     lpDisplayDevice->cb = devCB;
     BOOL queryDevResult = p_original_EnumDisplayDevicesA(lpDevice, devIndex, lpDisplayDevice, dwFlags);
     while (queryDevResult) {
@@ -41,7 +41,7 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
         }
 
         devIndex++;
-        ZeroMemory(lpDisplayDevice, sizeof DISPLAY_DEVICEA);
+        ZeroMemory(lpDisplayDevice, devCB);
         lpDisplayDevice->cb = devCB;
         queryDevResult = p_original_EnumDisplayDevicesA(lpDevice, devIndex, lpDisplayDevice, dwFlags);
     }
@@ -67,10 +67,16 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
 
             double modeAspect = static_cast<double>(mode.dmPelsWidth) / static_cast<double>(mode.dmPelsHeight);
             if (std::abs(modeAspect - primaryAspect) < 0.1) {
-                // NTSC display works at 59.9
-                // This is a dirty hack from Linux WINE 10.1
-                if (mode.dmDisplayFrequency == 59) {
-                    mode.dmDisplayFrequency = 60;
+                // NTSC display works at 59.9, which would be truncated to 59 by C data type.
+                // This is a dirty hack from Linux WINE 10.1 https://gitlab.winehq.org/wine/wine/-/merge_requests/7277
+                // It should be fine because DirectX 9 would default to the closest supported refresh rate below those unsupported refresh rate. https://learn.microsoft.com/en-us/windows/win32/api/d3d9helper/nf-d3d9helper-idirect3d9-createdevice
+                if (mode.dmDisplayFrequency == 143) {
+                    mode.dmDisplayFrequency = 144;
+                }
+                if (mode.dmDisplayFrequency != 144) {
+                    if (mode.dmDisplayFrequency % 5 == 4) {
+                        mode.dmDisplayFrequency++;
+                    }
                 }
 
                 auto modeStorage = reinterpret_cast<DEVMODEA*>(std::calloc(1, sizeof DEVMODEA));
