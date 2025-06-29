@@ -1,6 +1,6 @@
 # no1600x1200
 Experimental fix for Vanilla 1.12 wide display resolution.
-- Put `no1600x1200.dll` into game's folder.
+- [Download](https://github.com/allfoxwy/no1600x1200/releases/latest) `no1600x1200.dll` into game's folder.
 - Edit loader list to include `no1600x1200.dll`. (Usually the list is `dlls.txt`)
 - If there was VanillaMultiMonitorFix before, disable it as these 2 mods would conflict.
 - Start the game and check its Video Options.
