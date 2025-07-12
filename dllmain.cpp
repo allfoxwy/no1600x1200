@@ -51,7 +51,6 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
             std::free(modePtrs.back());
             modePtrs.pop_back();
         }
-
         
         DEVMODEA mode = {};
         DWORD modeIndex = 0;
@@ -69,19 +68,6 @@ BOOL WINAPI detoured_EnumDisplayDevicesA(LPCSTR lpDevice, DWORD iDevNum, PDISPLA
             if (std::abs(modeAspect - primaryAspect) < 0.1
                 // The game would validate 640x480 as its fallback
                 || (mode.dmPelsWidth == 640 && mode.dmPelsHeight == 480)) {
-
-                // NTSC display works at 59.9, which would be truncated to 59 by C data type.
-                // This is a dirty hack from Linux WINE 10.1 https://gitlab.winehq.org/wine/wine/-/merge_requests/7277
-                // It should be fine because DirectX 9 would default to the closest supported refresh rate below those unsupported refresh rate. https://learn.microsoft.com/en-us/windows/win32/api/d3d9helper/nf-d3d9helper-idirect3d9-createdevice
-                if (mode.dmDisplayFrequency == 143) {
-                    mode.dmDisplayFrequency = 144;
-                }
-                if (mode.dmDisplayFrequency != 144) {
-                    if (mode.dmDisplayFrequency % 5 == 4) {
-                        mode.dmDisplayFrequency++;
-                    }
-                }
-
                 auto modeStorage = reinterpret_cast<DEVMODEA*>(std::calloc(1, sizeof DEVMODEA));
                 if (modeStorage == NULL) {
                     MessageBoxW(NULL, utf8_to_utf16(u8"Failed to allocate memory for display mode struct.").data(), utf8_to_utf16(u8"no1600x1200").data(), MB_OK | MB_ICONINFORMATION | MB_SYSTEMMODAL);
